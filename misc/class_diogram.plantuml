@@ -1,0 +1,161 @@
+@startuml
+' Цвета для выделения слоев
+skinparam classBackgroundColor #F0F0F0
+skinparam componentStyle uml2
+
+' Основные классы
+class Customer {
+  - id: int
+  - name: String
+  - loyaltyPoints: int
+  - availablePoints: int
+  - loyaltyLevel: LoyaltyLevel
+  + calculateDiscount(price: double): double
+  + addLoyaltyPoints(points: int)
+  + upgradeLoyaltyLevel(newLevel: LoyaltyLevel)
+}
+
+interface LoyaltyLevel {
+  + calculateDiscount(price: double): double
+  + getLevelName(): String
+  + getUpgradeThreshold(): int
+  + clone(): LoyaltyLevel
+}
+
+class BronzeLevel implements LoyaltyLevel {
+  + calculateDiscount(price: double): double
+  + getLevelName(): String
+  + getUpgradeThreshold(): int
+  + clone(): LoyaltyLevel
+}
+
+class SilverLevel implements LoyaltyLevel {
+  + calculateDiscount(price: double): double
+  + getLevelName(): String
+  + getUpgradeThreshold(): int
+  + clone(): LoyaltyLevel
+}
+
+class GoldLevel implements LoyaltyLevel {
+  + calculateDiscount(price: double): double
+  + getLevelName(): String
+  + getUpgradeThreshold(): int
+  + clone(): LoyaltyLevel
+}
+
+class Discount {
+  {abstract}
+  + applyTo(price: double): double
+  + getDescription(): String
+  + clone(): Discount
+}
+
+class PercentageDiscount extends Discount {
+  - percentage: double
+  + applyTo(price: double): double
+  + getDescription(): String
+  + clone(): Discount
+}
+
+class SeasonalDiscount extends Discount {
+  - wrapped: Discount
+  - seasonalRate: double
+  + applyTo(price: double): double
+  + getDescription(): String
+  + clone(): Discount
+}
+
+class Transaction {
+  - id: int
+  - customerId: int
+  - amount: double
+  - pointsEarned: int
+  - discount: double
+  - date: String
+}
+
+' DAO классы
+class CustomerDAO {
+  + createTable(db: Database)
+  + save(db: Database, customer: Customer): int
+  + getById(db: Database, id: int): Customer
+}
+
+class TransactionDAO {
+  + createTable(db: Database)
+  + logTransaction(db: Database, customerId: int, amount: double, points: int, discount: double)
+}
+
+class DiscountDAO {
+  + createTable(db: Database)
+  + save(db: Database, discount: Discount): int
+}
+
+' База данных
+class Database {
+  - instance: Database
+  + getInstance(): Database
+  + execute(sql: String)
+  + prepare(sql: String): sqlite3_stmt
+}
+
+' Фабрики
+class CustomerFactory {
+  + create(id: int, name: String, level: LoyaltyLevel): Customer
+  + createVip(id: int, name: String): Customer
+  + createWholesale(id: int, name: String): Customer
+}
+
+class DiscountFactory {
+  + createPercentage(percentage: double): Discount
+  + createSeasonal(base: Discount, rate: double): Discount
+}
+
+' UI и бизнес-логика
+class CLI {
+  - db: Database
+  - loyaltyProgram: LoyaltyProgram
+  + run()
+  + addCustomer()
+  + listCustomers()
+}
+
+class LoyaltyProgram {
+  - pointsPerDollar: double
+  + processPurchase(customerId: int, amount: double)
+}
+
+' Связи и зависимости
+Customer "1" *-- "1" LoyaltyLevel : composition
+CustomerDAO "1" --> "1..*" Customer : manages
+CustomerDAO --> Database : uses
+TransactionDAO --> Database : uses
+DiscountDAO --> Database : uses
+
+CLI --> CustomerDAO : uses
+CLI --> TransactionDAO : uses
+CLI --> CustomerFactory : uses
+
+SeasonalDiscount "1" --> "1" Discount : decorates
+Customer --> Discount : uses
+
+Database -[hidden]-> CustomerDAO
+Database -[hidden]-> TransactionDAO
+Database -[hidden]-> DiscountDAO
+
+LoyaltyProgram --> CustomerDAO : uses
+LoyaltyProgram --> TransactionDAO : uses
+
+Transaction "1" --> "0..1" Discount : uses
+DiscountFactory --> PercentageDiscount : creates
+DiscountFactory --> SeasonalDiscount : creates
+CLI --> DiscountFactory : uses
+LoyaltyProgram --> DiscountFactory : uses
+TransactionDAO "1" --> "1..*" Transaction : manages
+
+' Обновленная секция связей
+Customer --> Transaction : has
+LoyaltyProgram --> Transaction : generates
+DiscountFactory ..> Transaction : «create»
+
+@enduml

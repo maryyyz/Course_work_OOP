@@ -1,0 +1,64 @@
+@startuml
+component "Система лояльности" {
+  [UI Layer] as UI
+  [Business Logic] as BL
+  [Data Access] as DA
+  [Database] as DB
+}
+
+package "UI Layer" {
+  [CLI] as CLI
+}
+
+package "Business Logic" {
+  [Customer] as Customer
+  [LoyaltyLevel] as LoyaltyLevel
+  [Discount] as Discount
+  [LoyaltyProgram] as LoyaltyProgram
+  [Factories] as Factories
+}
+
+package "Data Access" {
+  [CustomerDAO] as CustomerDAO
+  [TransactionDAO] as TransactionDAO
+  [DiscountDAO] as DiscountDAO
+}
+
+package "Database" {
+  [SQLite] as SQLite
+}
+
+' Связи
+UI --> BL : interacts with
+BL --> DA : uses
+DA --> DB : persists data
+
+CLI --> Customer : creates/manages
+CLI --> LoyaltyProgram : triggers
+LoyaltyProgram --> CustomerDAO : updates
+LoyaltyProgram --> TransactionDAO : logs
+Factories --> Customer : creates
+Factories --> Discount : creates
+
+CustomerDAO --> SQLite : SQL
+TransactionDAO --> SQLite : SQL
+DiscountDAO --> SQLite : SQL
+
+note right of LoyaltyLevel
+  Strategy Pattern:
+  Bronze/Silver/Gold levels
+  implement different discount strategies
+end note
+
+note bottom of Discount
+  Decorator Pattern:
+  SeasonalDiscount wraps
+  base Discount objects
+end note
+
+note left of Database
+  Singleton Pattern:
+  Only one database instance
+  across the application
+end note
+@enduml
